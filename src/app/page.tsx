@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const inputSchema = z.object({
   entryId: z.string(),
@@ -37,6 +38,11 @@ const schema = z
   })
   .required();
 
+const prettifyJson = (json: string | object) =>
+  typeof json === "string"
+    ? JSON.stringify(JSON.parse(json), null, 4)
+    : JSON.stringify(json, null, 4);
+
 export default function Page() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -46,8 +52,9 @@ export default function Page() {
   });
   const [output, setOutput] = useState("");
 
-  const onSubmit = form.handleSubmit(({ input }) => {
-    fetch("/api/converter", {
+  const onSubmit = form.handleSubmit(async ({ input }) => {
+    form.setValue("input", prettifyJson(input));
+    await fetch("/api/converter", {
       method: "POST",
       body: input,
       headers: {
@@ -55,19 +62,26 @@ export default function Page() {
       },
     })
       .then((res) => res.json())
+      // Simulate a delay to show the loading state
+      .then(
+        (res) =>
+          new Promise<typeof res>((resolve) =>
+            setTimeout(() => resolve(res), 1000)
+          )
+      )
       .then(({ output }) => {
-        setOutput(JSON.stringify(output, null, 4));
+        setOutput(prettifyJson(output));
       });
   });
 
   return (
-    <main className="container h-screen flex flex-col justify-center py-24 gap-12">
+    <main className="container h-screen flex flex-col justify-center py-24 gap-12 overflow-hidden">
       <h1 className="font-bold text-4xl self-center">List to Tree converter</h1>
       <div className="flex flex-grow gap-8">
         <Form {...form}>
           <form
             onSubmit={onSubmit}
-            className="flex flex-col flex-grow gap-4 basis-0"
+            className="flex flex-col flex-grow gap-4 basis-0 transition-all"
           >
             <FormField
               control={form.control}
@@ -84,16 +98,37 @@ export default function Page() {
             <Button
               className="self-center w-full"
               type="submit"
-              disabled={form.formState.isLoading}
+              disabled={form.formState.isSubmitting}
             >
-              {form.formState.isLoading && (
+              {form.formState.isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Convert
             </Button>
           </form>
         </Form>
-        <Textarea className="flex flex-grow basis-0" disabled value={output} />
+
+        <AnimatePresence>
+          {Boolean(output) && (
+            <motion.div
+              className="flex flex-col gap-4 basis-0"
+              initial={{ opacity: 0, width: 0, x: 500, flexGrow: 0 }}
+              animate={{
+                opacity: 1,
+                width: "auto",
+                x: 0,
+                flexGrow: 1,
+              }}
+              transition={{ duration: 0.4, ease: "circInOut" }}
+            >
+              <Textarea
+                className="flex flex-grow basis-0"
+                disabled
+                value={output}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );
