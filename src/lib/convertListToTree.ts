@@ -1,7 +1,4 @@
-import { Input, inputList } from "./input";
-import { Output } from "./output";
-
-console.log("running");
+import { Input, Output } from "@/types";
 
 const rootSymbol = Symbol("root");
 
@@ -21,7 +18,7 @@ const inputToOutput = ({
   };
 };
 
-export const generateOutput = (inputs: Input[]) => {
+export const convertListToTree = (inputs: Input[]) => {
   const outputs = inputs
     // Start with the deepest paths in the tree ordered by entryId
     .sort(
@@ -51,5 +48,3 @@ export const generateOutput = (inputs: Input[]) => {
 
   return outputs;
 };
-
-console.log(JSON.stringify(generateOutput(inputList), null, 2));

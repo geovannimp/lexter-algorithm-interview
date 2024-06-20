@@ -1,9 +1,4 @@
-export interface Output {
-  entryId: number;
-  fullPath: string;
-  currentPath: string;
-  children: Output[];
-}
+import { Output } from "@/types";
 
 export const outputList: Output[] = [
   {
